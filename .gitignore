@@ -1,9 +1,7 @@
 # Virtual environment
 venv/
 
-# Datasets — too large for Git; document sources in README instead
-Datasets/
-*.csv
+
 *.png
 *.jpg
 *.jpeg
