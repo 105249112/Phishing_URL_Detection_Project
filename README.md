@@ -72,7 +72,12 @@ python3 train_model.py
 Phishing_URL_Detection_Project/
 ├── Datasets/ (not tracked in Git — see setup above)
 ├── Souce_code/
-│ ├── Data_Processing.py
-│ └── ...
+│ ├── base_processing.py
+| |-- base_processed.csv
+| |--Qr_decoding.py
+│ └── qr_processed.csv
+|
 ├── requirements.txt
 └── README.md
+
+
