@@ -1,7 +1,7 @@
-import re                          # for the IP address pattern check
-import pandas as pd                # for reading and working with the CSV
-from types import SimpleNamespace  # for a fallback when a URL can't be parsed
-from urllib.parse import urlsplit  # for splitting a URL into its parts
+import re                        
+import pandas as pd                
+from types import SimpleNamespace 
+from urllib.parse import urlsplit 
 
 # loads the cleaned dataset
 df = pd.read_csv("../Datasets/combined_cleaned.csv")
