@@ -1,3 +1,5 @@
+import random
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
@@ -49,19 +51,18 @@ for k in k_values:
 
     kmeans_test = KMeans(
         n_clusters=k,
-        random_state=42,
+        random_state=1,
         n_init=10
     )
 
     labels_test = kmeans_test.fit_predict(X_scaled)
 
-    # sample_size keeps this fast on a large dataset — it scores a
-    # random subset instead of every single row
+     #Scoring all 136,784 rows took far way to long to finish, so a 20,000 row sample had to be used instead
     score = silhouette_score(
         X_scaled,
         labels_test,
         sample_size=20000,
-        random_state=42
+        random_state=1
     )
 
     silhouette_scores.append(score)
@@ -94,7 +95,7 @@ print(f"\nBest k: {best_k}")
 
 kmeans = KMeans(
     n_clusters=best_k,
-    random_state=42,
+    random_state=1,
     n_init=10
 )
 
