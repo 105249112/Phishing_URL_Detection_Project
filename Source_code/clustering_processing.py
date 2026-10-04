@@ -51,7 +51,7 @@ for k in k_values:
 
     kmeans_test = KMeans(
         n_clusters=k,
-        random_state=1,
+        random_state=42,
         n_init=10
     )
 
@@ -62,7 +62,7 @@ for k in k_values:
         X_scaled,
         labels_test,
         sample_size=20000,
-        random_state=1
+        random_state=42
     )
 
     silhouette_scores.append(score)
@@ -95,7 +95,7 @@ print(f"\nBest k: {best_k}")
 
 kmeans = KMeans(
     n_clusters=best_k,
-    random_state=1,
+    random_state=42,
     n_init=10
 )
 
