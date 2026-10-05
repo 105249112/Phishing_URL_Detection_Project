@@ -1,5 +1,6 @@
 import pandas as pd
 import tensorflow as tf
+import json
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Embedding, Conv1D, GlobalMaxPooling1D, Dense, Dropout
 import numpy as np
@@ -106,6 +107,10 @@ PAD_ID = 0
 UNK_ID = 1
 
 vocab_size = len(char_to_id) + 2
+with open("../Models/char_to_id.json", "w", encoding="utf-8") as file:
+    json.dump(char_to_id, file, ensure_ascii=False, indent=2)
+    
+print("\nCharacter vocabulary saved successfully.")
 
 print("\nVocabulary size including PAD and UNK:")
 print(vocab_size)
@@ -268,6 +273,6 @@ print(classification_report(
     target_names=["Benign", "Malicious"],
     digits=4
 ))
-model.save("models/innovation_cnn.keras")
+model.save("../Models/innovation_cnn.keras")
 
 print("\nInnovation CNN model saved successfully.")

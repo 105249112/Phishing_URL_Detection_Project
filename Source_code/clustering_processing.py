@@ -1,4 +1,5 @@
 import random
+import joblib
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -102,6 +103,10 @@ kmeans = KMeans(
 # adds 1 so clusters are numbered 1, 2, 3 instead of starting at 0
 malicious_df["cluster"] = kmeans.fit_predict(X_scaled) + 1
 
+joblib.dump(kmeans, "../Models/clustering_kmeans.joblib")
+joblib.dump(scaler, "../Models/clustering_scaler.joblib")
+
+print("\nClustering model and scaler saved successfully.")
 
 print("\nCluster sizes:")
 print(

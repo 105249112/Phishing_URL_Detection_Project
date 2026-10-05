@@ -4,13 +4,7 @@ import pandas as pd
 from types import SimpleNamespace  
 from urllib.parse import urlsplit  
 
-# loads the cleaned dataset
-df = pd.read_csv("../Datasets/combined_cleaned.csv")
 
-print("Loaded shape:")   
-print(df.shape) 
-
-print("\nColumns:", df.columns.tolist())   # shows the column names before features are added
 
 # the shape of a valid scheme for example   http, https, ftp
 scheme = r"[a-zA-Z][a-zA-Z0-9+\-.]*"
@@ -126,29 +120,54 @@ def has_suspicious_keyword(url):
     text = url.lower()
     return int(any(word in text for word in suspicious_keywords))
 
-# add each feature as a new column
-df["url_length"] = df["url"].apply(url_length)                            
-df["hyphen_count"] = df["url"].apply(hyphen_count)                    
-df["number_count"] = df["url"].apply(number_count)                          
-df["uses_https"] = df["url"].apply(uses_https)                           
-df["has_ip"] = df["url"].apply(has_ip)                                    
-df["subdomain_count"] = df["url"].apply(subdomain_count)                 
-df["has_at_symbol"] = df["url"].apply(has_at_symbol)                       
-df["has_double_slash_redirect"] = df["url"].apply(has_double_slash_redirect)  
-df["path_depth"] = df["url"].apply(path_depth)                             
-df["has_lookalike_chars"] = df["url"].apply(has_lookalike_chars)          
-df["tld_risk"] = df["url"].apply(tld_risk)                              
-df["has_suspicious_keyword"] = df["url"].apply(has_suspicious_keyword)
+def extract_features(url):
+    return {
+        "url_length": url_length(url),
+        "hyphen_count": hyphen_count(url),
+        "number_count": number_count(url),
+        "uses_https": uses_https(url),
+        "has_ip": has_ip(url),
+        "subdomain_count": subdomain_count(url),
+        "has_at_symbol": has_at_symbol(url),
+        "has_double_slash_redirect": has_double_slash_redirect(url),
+        "path_depth": path_depth(url),
+        "has_lookalike_chars": has_lookalike_chars(url),
+        "tld_risk": tld_risk(url),
+        "has_suspicious_keyword": has_suspicious_keyword(url)
+    }
 
-print("\nFinal shape:")  
-print(df.shape)         # shows the row and column count after features were added
+if __name__ == "__main__":
 
-print("\nFirst 8 rows:")          
-preview = df.head(8).copy()       
-preview.index = range(1, 9)       # starts at 1 because i didnt want it to start at 0
-print(preview)                    
+    # loads the cleaned dataset
+    df = pd.read_csv("../Datasets/combined_cleaned.csv")
 
-df.to_csv("../Datasets/feature_dataset.csv", index=False)   
+    print("Loaded shape:")
+    print(df.shape)
 
-print("\nFeature dataset saved successfully.")    
-print("File: ../Datasets/feature_dataset.csv")
+    print("\nColumns:", df.columns.tolist())
+    # add each feature as a new column
+    df["url_length"] = df["url"].apply(url_length)                            
+    df["hyphen_count"] = df["url"].apply(hyphen_count)                    
+    df["number_count"] = df["url"].apply(number_count)                          
+    df["uses_https"] = df["url"].apply(uses_https)                           
+    df["has_ip"] = df["url"].apply(has_ip)                                    
+    df["subdomain_count"] = df["url"].apply(subdomain_count)                 
+    df["has_at_symbol"] = df["url"].apply(has_at_symbol)                       
+    df["has_double_slash_redirect"] = df["url"].apply(has_double_slash_redirect)  
+    df["path_depth"] = df["url"].apply(path_depth)                             
+    df["has_lookalike_chars"] = df["url"].apply(has_lookalike_chars)          
+    df["tld_risk"] = df["url"].apply(tld_risk)                              
+    df["has_suspicious_keyword"] = df["url"].apply(has_suspicious_keyword)
+
+    print("\nFinal shape:")  
+    print(df.shape)         # shows the row and column count after features were added
+
+    print("\nFirst 8 rows:")          
+    preview = df.head(8).copy()       
+    preview.index = range(1, 9)       # starts at 1 because i didnt want it to start at 0
+    print(preview)                    
+
+    df.to_csv("../Datasets/feature_dataset.csv", index=False)   
+
+    print("\nFeature dataset saved successfully.")    
+    print("File: ../Datasets/feature_dataset.csv")
