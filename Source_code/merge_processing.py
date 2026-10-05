@@ -11,7 +11,7 @@ print(base_df.shape)
 print("\nQR shape:")
 print(qr_df.shape)
 
-# shows the column names of each dataset
+
 print("\nBase columns:")
 print(base_df.columns.tolist())
 
