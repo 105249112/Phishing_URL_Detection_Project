@@ -173,9 +173,9 @@ malicious_data, malicious_failures = decode_qr_folder(
 )
 
 
-# ---------------------------------------------------------
+
 # Combine both decoded QR datasets
-# ---------------------------------------------------------
+
 
 all_qr_data = benign_data + malicious_data
 
@@ -191,10 +191,7 @@ if not df.empty:
 
 # Save combined QR dataset
 
-df.to_csv(
-    "qr_processed.csv",
-    index=False
-)
+df.to_csv("../Datasets/qr_processed.csv", index=False)
 
 # Combine failed files
 
@@ -230,4 +227,3 @@ print(df["type"].value_counts())
 
 print("\nFiles created:")
 print("qr_processed.csv")
-print("qr_decode_failures.csv")

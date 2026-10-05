@@ -52,7 +52,7 @@ print(f"Blank URLs: {df['url'].astype(str).str.strip().eq('').sum()}")
 print(f"Labels: {df['type'].unique().tolist()}")
 print(f"Sources: {df['source'].unique().tolist()}")
 
-df.to_csv("base_processed.csv", index=False)
+df.to_csv("../Datasets/base_processed.csv", index=False)
 
 print("\nProcessed base dataset saved successfully.")
 print("File: base_processed.csv")
