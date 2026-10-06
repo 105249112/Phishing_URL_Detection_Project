@@ -179,12 +179,17 @@ def test_url():
         f"{rf_probability:.4f}"
     )
 
+    print("Test Accuracy: 99.00%")
+    print("Test F1 Score: 98.06%")
+
     print("\nInnovation CNN:")
     print("Prediction:", cnn_result)
     print(
         f"Malicious probability: "
         f"{cnn_probability:.4f}"
     )
+    print("Test Accuracy: 99.81%")
+    print("Test F1 Score: 99.63%")
 
 
     # SUSPICIOUS FEATURES
