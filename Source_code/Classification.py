@@ -103,22 +103,40 @@ y = df["label"]   # 0 or 1
 
 # using stratify to keep similar class proportions in training and testing data.
 
-X_train, X_test, y_train, y_test = train_test_split(
+indices = df.index
 
-    X,
-    y,
-
+train_idx, temp_idx = train_test_split(
+    indices,
     test_size=0.30,
-
-    stratify=y,   # keeps the same benign and malicous ratio in the both traingin and test sets
-
-    random_state=42
-
+    random_state=42,
+    stratify=df["label"]
 )
+
+val_idx, test_idx = train_test_split(
+    temp_idx,
+    test_size=0.50,
+    random_state=42,
+    stratify=df.loc[temp_idx, "label"]
+)
+
+
+# Create feature datasets from the same row indices
+
+X_train = X.loc[train_idx]
+y_train = y.loc[train_idx]
+
+X_val = X.loc[val_idx]
+y_val = y.loc[val_idx]
+
+X_test = X.loc[test_idx]
+y_test = y.loc[test_idx]
 
 
 print("\nTraining rows:")
 print(len(X_train))
+
+print("\nValidation rows:")
+print(len(X_val))
 
 print("\nTesting rows:")
 print(len(X_test))
@@ -357,9 +375,9 @@ for name, model in models.items():
 
         pipeline,
 
-        X,
+        X_train,
 
-        y,
+        y_train,
 
         cv=cv,
 
@@ -416,3 +434,5 @@ print(
 
 
 print("\nClassification complete.")
+
+
