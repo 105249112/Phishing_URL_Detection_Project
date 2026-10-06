@@ -8,7 +8,6 @@ venv/
 
 # Trained model files
 *.pkl
-*.joblib
 
 # Python cache
 __pycache__/
