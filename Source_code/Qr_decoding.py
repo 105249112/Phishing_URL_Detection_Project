@@ -192,7 +192,6 @@ if not df.empty:
 # Save combined QR dataset
 
 df.to_csv("../Datasets/qr_processed.csv", index=False)
-
 # Combine failed files
 
 
