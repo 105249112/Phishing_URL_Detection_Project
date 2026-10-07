@@ -165,13 +165,13 @@ The resulting training dataset is saved as:
 ../Datasets/feature_dataset.csv
 
 
-## To inspect the prepared feature dataset and produce exploratory graphs/statistics, 
+ To inspect the prepared feature dataset and produce exploratory graphs/statistics, 
 run: python3 data_analysis.py
 
 
-5. Train the Models
+## 5. Train the Models
 
-Baseline classifiers
+## Baseline classifiers
 Run: python3 Classification.py
 
 This trains:
@@ -203,7 +203,7 @@ It saves:
 ../Models/clustering_kmeans.joblib
 ../Models/clustering_scaler.joblib
 
-6. Evaluate the Final CNN
+## 6. Evaluate the Final CNN
 
 Run: python3 model_evaluation.py
 
@@ -219,7 +219,7 @@ The evaluation includes:
 
 It also performs an additional source-holdout evaluation. A fresh CNN is trained using only base URLs and tested using only qr URLs, while URLs labelled both are excluded. This provides a harder test of how well the model generalises to a different data source.
 
-7. Use the Trained Models for Prediction
+## 7. Use the Trained Models for Prediction
 
 Before running the application, make sure the required model files have been created by running the training scripts above.
 Start the application by running: 
@@ -252,7 +252,7 @@ Innovation CNN:
 Prediction: MALICIOUS
 
 
-8. Recommended Execution Order
+## 8. Recommended Execution Order
 For a complete run from the original downloaded datasets:
 
 cd Source_code
@@ -272,7 +272,7 @@ python3 main.py
 If the prepared datasets and trained models already exist, you can directly run: (make sure it is an right order)
 cd Source_code
 
- ### python3 main.py
+  python3 main.py
 
 
  Thakn you
