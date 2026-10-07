@@ -1,6 +1,8 @@
 import pandas as pd
 import tensorflow as tf
 import json
+import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Embedding, Conv1D, GlobalMaxPooling1D, Dense, Dropout
 import numpy as np
