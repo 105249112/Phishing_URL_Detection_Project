@@ -4,11 +4,19 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import joblib
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 from urllib.parse import urlsplit
 from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import Request
 from Source_code.feature_extraction import extract_features
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
+limiter = Limiter(key_func=get_remote_address)
 MODEL_PATH = Path(__file__).resolve().parent.parent / "Models" / "phishing_classifier.joblib"
 
 ml_model = None
@@ -26,7 +34,45 @@ app = FastAPI(
     description="Backend API for detecting phishing URLs using our Assignment 2 machine-learning model.",
     version="1.0.0",
     lifespan=lifespan
+    
 )
+
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Too many requests. Please try again later."
+        },
+        headers={"Retry-After": "60"}
+    )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Invalid request. Please provide a valid URL."
+        }
+    )
+
+
 class PredictionRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
 
@@ -51,15 +97,20 @@ def health_check():
         "message": "Phishing URL Detection API and model are ready"
     }
     
+
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
-def predict_url(request: PredictionRequest):
+@limiter.limit("10/minute")
+def predict_url(request: Request, payload: PredictionRequest):
+
     if ml_model is None:
+
+        
         raise HTTPException(
             status_code=503,
             detail="Prediction model is unavailable"
         )
 
-    url = request.url.strip()
+    url = payload.url.strip()
     if not url or any(char.isspace() for char in url):
         raise HTTPException(
             status_code=422,
