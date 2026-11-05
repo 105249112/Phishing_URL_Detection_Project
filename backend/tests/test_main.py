@@ -139,4 +139,33 @@ def test_predict_model_failure(monkeypatch):
     assert response.status_code == 500
     assert response.json()["detail"] == "Unable to analyse this URL"
     assert "Internal model failure" not in response.text
+
+
+def test_request_body_too_large():
+    with TestClient(app) as client:
+        response = client.post(
+            "/predict",
+            json={"url": "https://example.com/" + "a" * 9000}
+        )
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "Request body exceeds the 8 KB limit."
+
+
+def test_oversized_body_without_content_length():
+    with TestClient(app) as client:
+        def body_chunks():
+            yield b'{"url":"https://example.com/'
+            yield b"a" * 9000
+            yield b'"}'
+
+        response = client.post(
+            "/predict",
+            content=body_chunks(),
+            headers={"Content-Type": "application/json"}
+        )
+
+    assert response.status_code == 413
+
+
     
