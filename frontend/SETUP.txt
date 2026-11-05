@@ -1,0 +1,9 @@
+Put this whole "frontend" folder in the root of your repo, next to "backend".
+Then:
+  cd frontend
+  npm install
+  npm run dev        (opens http://localhost:5173)
+Backend must be running at http://localhost:8000 (or set VITE_API_URL in .env,
+copy .env.example). Backend needs CORSMiddleware allowing ONLY
+http://localhost:5173.
+Do not commit node_modules or dist.
