@@ -3,8 +3,7 @@ venv/
 
 
 *.png
-*.jpg
-*.jpeg
+
 
 # Trained model files
 *.pkl
@@ -42,3 +41,7 @@ __pycache__/
 # Local editor and operating system files
 .vscode/
 .DS_Store
+
+
+.DS_Store
+**/.DS_Store

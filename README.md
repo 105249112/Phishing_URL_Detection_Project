@@ -274,7 +274,17 @@ cd Source_code
 
   python3 main.py
 
-2.6 Threat Model
+
+
+
+
+
+
+
+##### Assignment 3 readme sections: ###########
+
+
+###### 2.6 Threat Model
 
 The Phishing URL Detection application is a web application using React and FastAPI. This application uses a trained Random Forest classifier to detect potentially phishing URLs. The main threat actor is the phisher who will try to avoid detection by changing the characteristics of URLs to be classified as legitimate. The second threat actor is an abusive API user who will try to cause problems with the application or find any vulnerabilities.
 
@@ -284,7 +294,135 @@ Main threats are DoS attacks due to excessive or expensive requests to predict. 
 
 Denial of service protection was chosen to protect against the threats identified. Misconfiguration and vulnerable dependencies were also chosen from Section 2.7. Section 2.8 looks at how evasion can be prevented by using controlled URL manipulation, and if input normalisation helps to make the model more robust against these types of attacks.
 
-Section 2.7 
+
+###### Section 2.7 Security Defences
+
+Two security defences were selected based on the threat model in Section 2.6: Misconfiguration and Vulnerable Dependencies (Intermediate) and Denial-of-Service Protection (Advanced). These defences address risks associated with insecure third-party libraries, missing security configurations and excessive requests to the machine-learning prediction endpoint.
+
+#### 2.7.1 Misconfiguration and Vulnerable Dependencies (Intermediate Defence)
+
+Threat and justification
+
+Phishing URL Detection uses a variety of third party dependencies. This includes using React, Vite, FastAPI. Using outdated libraries can leave applications vulnerable to known vulnerabilities. Not having HTTP security headers can leave the application vulnerable to threats such as cross-site scripting (XSS), clickjacking and misinterpretation.This defence was chosen to help find any known vulnerabilities in dependencies and improve the security configuration on the front-end.
+
+Implementation
+
+Dependency audits were performed using "npm audit" for the React frontend and "pip-audit" for the Python backend.
+Following an initial audit we found 3 high severity vulnerabilities relating to the dependencies of React Router, React Router DOM, and Vite. All these were updated to a compatible patched version. Following an audit we found there are no known vulnerabilities in the frontend dependencies. We also found no known vulnerabilities in the Python dependencies.
+
+The running web application was examined using OWASP ZAP. The initial scan identified missing security headers, including Content Security Policy (CSP), anti-clickjacking protection and X-Content-Type-Options.
+
+To address these findings, security headers were configured in 'frontend 2/vite.config.js' file for the Vite production-preview server:
+
+1. Content-Security-Policy: Restricts permitted resource sources, including scripts and styles.
+
+2. X-Frame-Options: DENY: Prevents other websites from embedding the application in frames.
+
+3. X-Content-Type-Options: nosniff: Prevents browsers from interpreting responses as an unintended content type.
+
+
+The CSP was further strengthened by removing the 'unsafe-inline' allowance from style-src.
+
+The testing and results shows that: 
+
+Security assessment                   Before defence                     After defence 
+
+npm dependency audit               3 high vulnerabilities             0 reported vulnerabilities
+
+Python dependency audit          0 known vulnerabilities                  No remediation required
+
+ZAP alert categories                      7                                       3
+
+ZAP medium-risk categories                2                                       0
+
+Frontend security headers       Required headers missing                Configured and verified
+
+
+The final ZAP scan had zero high and medium risk alerts. There was only 1 low risk alert relating to not having the X-Content-Type-Options header on the FastAPI CORS pre-flight responses. There were also 2 informational alerts.
+As the first scan was done against the Vite development server and the last scan was against the production-preview server there will be a difference in the number of alerts shown due to the new headers. The changes made were also checked by looking at the HTTP response headers using curl.
+Regression testing was done to confirm that the front-end was still able to submit URLs, get predictions from the Random Forest model and show the visualisation charts. Using a clean chrome profile there were no visible errors in the application console.
+
+Limitations
+
+Auditing dependencies will only identify any vulnerabilities that have been reported within the dependency information available to the tools. It does not guarantee the whole application has no vulnerabilities. Updating dependencies can cause compatibility issues which need to be regression tested. Security headers were tested on the local Vite preview server. In a production environment these protections would also need to be configured on the real hosting server.
+
+
+
+###### 2.7.2  Denial-of-Service Protection (Advanced Defence)
+
+
+Threat & Justification
+
+The /predict endpoint of the application extracts features from the URL and uses a Random Forest algorithm to classify the URL. This endpoint can be misused by an attacker to make many requests at once. This will consume processing power, lowering the availability of the service to real users.
+SlowAPI rate limiting has been implemented along with limits on the size of the request body. However, this does not limit the amount of model inferences that can happen concurrently.
+Therefore a new method was implemented within the backend/main.py file.
+
+Implementation
+
+A bounded semaphore was implemented in Python to allow for a maximum of 2 model inferences to run at once in one backend process.
+Each validated request will attempt to acquire one of the slots before extracting features and predicting with the model.
+If there are available slots then the request will run as normal. However if both slots are taken then the backend will return an HTTP 503 (Service Unavailable) response and indicate that they should try again. Finally the slot will be released. The existing synchronous endpoint will still run using the FastAPI thread pool.
+
+Controlled Attack Simulation
+
+To test this defence a temporary testing mode was added to add a 2 second delay into the protected inference function. This simulates a costly process. This is turned off by default.
+5 requests were made at once using Python ThreadPoolExecutor. Using the same testing method and simulated costly process the application was tested with and without the semaphore admission control.
+
+The testing and results shows that: 
+
+Measurement                                   Without defence                     With defence
+
+Simultaneous prediction requests                     5                                   5
+
+Successful requests (HTTP 200)                       5                                   2
+
+Rejected requests (HTTP 503)                         0                                   3
+
+Mean successful response time                  Approximately 2.241 s               Approximately 2.163 s
+
+Mean overload rejection time                     Not applicable                    Approximately 0.027 s
+
+Maximum permitted active inferences             No explicit two-slot limit               2
+
+
+
+
+The protected application took 27-28ms to deny the 3 extra requests, while the accepted requests took around 2 seconds to complete. Further testing to ensure availability and recovery:
+
+Responsiveness
+
+The /health endpoint showed a 200 response time of only 17ms while 2 requests were being processed for expensive predictions.
+
+Recovery
+
+Another request was made which gave a 503 response whilst there were still active predictions. Once they had completed however, another request was made and it returned a 200.
+
+Variation Testing
+
+5 valid URLs were requested at the same time. Only 2 of the requests returned a 200, while 3 returned a 503 response. This took around 31ms.
+
+Regression Testing
+
+When not in test mode, the React front end continued to make predictions and show the class-probability and session history charts.
+This shows that we can limit concurrent inference, and quickly deny additional work.
+
+Limitations and Trade-Offs
+
+There is a trade-off between availability due to limiting concurrency. If both inference slots are busy, genuine users would get a 503 response. The client should therefore be resilient and attempt to re-request after a reasonable time period.
+The semaphore is limited to one Python process. If you had multiple workers or a distributed system, you would need some sort of shared admission control.
+Due to this being a controlled environment with a 2 second delay, rather than a large scale DoS attack, it shows that inference is limited to a certain point, but doesn’t fully protect against DoS/DDoS attacks in the real world.
+
+
+2.7.3 Overall Security Evaluation
+
+The two defences address different aspects of the application's attack surface.
+
+The Intermediate defence reduces exposure to known vulnerable dependencies and unsafe frontend security configurations. The Advanced defence protects machine-learning inference capacity from excessive concurrent processing.
+
+Both defences were evaluated using security tools, controlled experiments and application regression testing. The results demonstrate measurable improvements while preserving the phishing URL checker's main functionality.
+
+Supporting evidence includes the npm and Python dependency audits, OWASP ZAP reports, concurrency-test scripts, response-time measurements and application screenshots. These are retained under security_evidence/section_2.7/.
+
 
 
 
