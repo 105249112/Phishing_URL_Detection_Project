@@ -274,5 +274,19 @@ cd Source_code
 
   python3 main.py
 
+2.6 Threat Model
 
- Thakn you
+The Phishing URL Detection application is a web application using React and FastAPI. This application uses a trained Random Forest classifier to detect potentially phishing URLs. The main threat actor is the phisher who will try to avoid detection by changing the characteristics of URLs to be classified as legitimate. The second threat actor is an abusive API user who will try to cause problems with the application or find any vulnerabilities.
+
+Attackers can craft malicious URLs using the React frontend, or can manually issue HTTP requests to /predict FastAPI endpoint. Attackers can also query the model repeatedly, to collect information about the model predictions (labels, confidence scores), inference time, and errors. Attackers are assumed not to have admin access to the server, nor control over the trained model.
+
+Main threats are DoS attacks due to excessive or expensive requests to predict. Other threats are vulnerabilities coming from insecure app configurations, vulnerable dependencies and unsafe model loading via Joblib. Rate limiting is added, but further protection may be needed to prevent expensive requests. SQL injection, file upload attacks and improper access control do not apply since there is no SQL database, file upload functionality or user accounts. Command injection and SSRF are also not an issue as long as the URL feature extraction is not carrying out any system commands or fetching resources from outside.
+
+Denial of service protection was chosen to protect against the threats identified. Misconfiguration and vulnerable dependencies were also chosen from Section 2.7. Section 2.8 looks at how evasion can be prevented by using controlled URL manipulation, and if input normalisation helps to make the model more robust against these types of attacks.
+
+Section 2.7 
+
+
+
+
+ Thank you
