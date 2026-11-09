@@ -282,14 +282,14 @@ A React app where the user pastes a URL and sees PHISHING or LEGITIMATE as the m
 To run the frontend (the backend must already be running at http://localhost:8000; it needs Node.js 20 or newer):
 
 ```bash
-cd frontend
+cd "frontend 2"
 npm install
 npm run dev
 ```
 
 Then open http://localhost:5173.
 
-- Pinned versions (in `frontend/package.json`, with `package-lock.json`): react and react-dom 19.1.0, react-router-dom 7.6.2, recharts 2.15.4, vite 6.3.5, @vitejs/plugin-react 4.5.2.
+- Pinned versions (in `frontend 2/package.json`, with `package-lock.json`): react and react-dom 19.1.0, react-router-dom 7.6.2, recharts 2.15.4, vite 6.3.5, @vitejs/plugin-react 4.5.2.
 - Files: `src/Checker.jsx` (form, validation, API call, result and charts), `src/App.jsx` (routes), `src/ErrorBoundary.jsx` (crash fallback), `src/main.jsx` (entry point), `src/index.css` (styles).
 - States: idle, loading, success and error. A "Page not found" page covers unknown addresses and an error boundary covers unexpected failures, so the user never sees a blank screen. One `status` value decides which screen is shown, following React's approach of describing each visual state and switching between them (React, n.d.).
 - Charts: (1) the class probabilities for the latest check, and (2) the phishing probability of every check this session, with a filter and click-to-view details. Both have titles, labelled axes, legends, tooltips and a text or table alternative.
