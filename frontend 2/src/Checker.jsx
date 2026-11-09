@@ -67,11 +67,11 @@ async function checkUrl(url) {
 export default function Checker() {
   // State: "status" decides what the screen shows
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle"); // idle or loading or success or error
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
-  const [filter, setFilter] = useState("all"); // all | phishing | legitimate
+  const [filter, setFilter] = useState("all"); // all or phishing or legitimate
   const [selected, setSelected] = useState(null); // check number picked on chart 2 or the table
 
   // Runs when the form is submitted: validate, call the API, update the screen
