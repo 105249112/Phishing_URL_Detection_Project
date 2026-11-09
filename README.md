@@ -298,13 +298,9 @@ Then open http://localhost:5173.
 - Accessibility: every input has a label, results and errors are announced to screen readers, everything works by keyboard with a visible `:focus-visible` outline (MDN Web Docs, n.d.a), and the layout works at phone width.
 - Limitations: the model only sees the URL text, so it can misjudge some links. The session history is lost on refresh, and there are no automated frontend tests.
 
-### Generative AI use (frontend)
-
-Claude (Anthropic) was used to help draft and revise the React components, CSS and this README section, and to help debug. I tested the frontend against the real backend and can explain how each part works. Our tutor confirmed this use of AI was acceptable.
-
 ### References
 
-- MDN Web Docs (n.d.a) *:focus-visible CSS pseudo-class*. Available at: https://developer.mozilla.org/docs/Web/CSS/:focus-visible (Accessed: 9 November 2026).
-- MDN Web Docs (n.d.b) *Media query fundamentals*. Available at: https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Media_queries (Accessed: 9 November 2026).
-- MDN Web Docs (n.d.c) *Using CSS custom properties (variables)*. Available at: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_Variables (Accessed: 9 November 2026).
-- React (n.d.) *Reacting to Input with State*. Available at: https://react.dev/learn/reacting-to-input-with-state (Accessed: 9 November 2026).
+- MDN Web Docs (n.d.a) *:focus-visible CSS pseudo-class*. Available at: https://developer.mozilla.org/docs/Web/CSS/:focus-visible.
+- MDN Web Docs (n.d.b) *Media query fundamentals*. Available at: https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Media_queries.
+- MDN Web Docs (n.d.c) *Using CSS custom properties (variables)*. Available at: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_Variables.
+- React (n.d.) *Reacting to Input with State*. Available at: https://react.dev/learn/reacting-to-input-with-state.
