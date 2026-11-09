@@ -3,8 +3,7 @@ venv/
 
 
 *.png
-*.jpg
-*.jpeg
+
 
 # Trained model files
 *.pkl
@@ -19,3 +18,30 @@ __pycache__/
 # macOS junk
 .DS_Store
 
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+venv/
+.venv/
+
+# Node.js dependencies
+node_modules/
+
+# React production build
+dist/
+
+# Python cache and testing files
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Local editor and operating system files
+.vscode/
+.DS_Store
+
+
+.DS_Store
+**/.DS_Store

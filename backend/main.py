@@ -15,11 +15,25 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.types import ASGIApp, Receive, Scope, Send
 from Source_code.feature_extraction import extract_features
+from threading import BoundedSemaphore  ### this is because, semaphore is a mechanism that limits how many tasks may use a resource at the same time. 
+import os 
+import time 
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "Models" / "phishing_classifier.joblib"
 MAX_REQUEST_BODY_SIZE = 8192
 limiter = Limiter(key_func=get_remote_address)
 ml_model = None
+
+MAX_CONCURRENT_INFERENCES = 2
+inference_slots = BoundedSemaphore(
+    value=MAX_CONCURRENT_INFERENCES
+)
+# Local DoS testing only. Disabled by default.
+# Simulates expensive inference for local concurrency testing.
+# Never enable DOS_TEST_MODE in a deployed environment.
+
+DOS_TEST_MODE = os.getenv("DOS_TEST_MODE", "false").lower() == "true"
+DOS_TEST_DELAY = 2.0
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -123,8 +137,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000"
     ],
     allow_credentials=False,
     allow_methods=["GET", "POST"],
@@ -203,8 +215,18 @@ def predict_url(request: Request, payload: PredictionRequest):
             status_code=422,
             detail="Please enter a valid HTTP or HTTPS website URL"
         )
+    
+    if not inference_slots.acquire(blocking=False):
+        raise HTTPException(
+            status_code=503,
+            detail="Prediction capacity reached. Please retry later.",
+            headers={"Retry-After": "2"}
+    )
 
     try:
+        if DOS_TEST_MODE:
+            time.sleep(DOS_TEST_DELAY)
+
         features = extract_features(url)
         feature_df = pd.DataFrame(
             [features],
@@ -233,3 +255,5 @@ def predict_url(request: Request, payload: PredictionRequest):
             status_code=500,
             detail="Unable to analyse this URL"
         )
+    finally:
+        inference_slots.release()
