@@ -428,3 +428,32 @@ Supporting evidence includes the npm and Python dependency audits, OWASP ZAP rep
 
 
  Thank you
+## Frontend
+
+A React app where the user pastes a URL and sees PHISHING or LEGITIMATE as the most prominent element, with the model's confidence and a caution message. It sends the URL to the backend `POST /predict` endpoint and shows the reply.
+
+To run the frontend (the backend must already be running at http://localhost:8000; it needs Node.js 20 or newer):
+
+```bash
+cd "frontend 2"
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+- Pinned versions (in `frontend 2/package.json`, with `package-lock.json`): react and react-dom 19.1.0, react-router-dom 7.6.2, recharts 2.15.4, vite 6.3.5, @vitejs/plugin-react 4.5.2.
+- Files: `src/Checker.jsx` (form, validation, API call, result and charts), `src/App.jsx` (routes), `src/ErrorBoundary.jsx` (crash fallback), `src/main.jsx` (entry point), `src/index.css` (styles).
+- States: idle, loading, success and error. A "Page not found" page covers unknown addresses and an error boundary covers unexpected failures, so the user never sees a blank screen. One `status` value decides which screen is shown, following React's approach of describing each visual state and switching between them (React, n.d.).
+- Charts: (1) the class probabilities for the latest check, and (2) the phishing probability of every check this session, with a filter and click-to-view details. Both have titles, labelled axes, legends, tooltips and a text or table alternative.
+- Validation: the page checks the scheme, spaces, hostname and length for usability only. The backend repeats these checks and is the security boundary.
+- Styling: one colour scheme is defined once as CSS custom properties (MDN Web Docs, n.d.c), and a media query adjusts the layout for narrow screens (MDN Web Docs, n.d.b).
+- Accessibility: every input has a label, results and errors are announced to screen readers, everything works by keyboard with a visible `:focus-visible` outline (MDN Web Docs, n.d.a), and the layout works at phone width.
+- Limitations: the model only sees the URL text, so it can misjudge some links. The session history is lost on refresh, and there are no automated frontend tests.
+
+### References
+
+- MDN Web Docs (n.d.a) *:focus-visible CSS pseudo-class*. Available at: https://developer.mozilla.org/docs/Web/CSS/:focus-visible.
+- MDN Web Docs (n.d.b) *Media query fundamentals*. Available at: https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Media_queries.
+- MDN Web Docs (n.d.c) *Using CSS custom properties (variables)*. Available at: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_Variables.
+- React (n.d.) *Reacting to Input with State*. Available at: https://react.dev/learn/reacting-to-input-with-state.

@@ -10,6 +10,8 @@ import {
 // Backend address. Change it with VITE_API_URL in a .env file.
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const MAX_URL_LENGTH = 2048; // same limit as the backend
+const AXIS_COLOUR = "#000000"; // black chart text so it is easy to read
+const AXIS_TICK = { fill: AXIS_COLOUR };
 
 
 // ---------- Validation (mirrors the backend rules; the backend is the real check) ----------
@@ -65,11 +67,11 @@ async function checkUrl(url) {
 export default function Checker() {
   // State: "status" decides what the screen shows
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | success | error
+  const [status, setStatus] = useState("idle"); // idle or loading or success or error
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
-  const [filter, setFilter] = useState("all"); // all | phishing | legitimate
+  const [filter, setFilter] = useState("all"); // all or phishing or legitimate
   const [selected, setSelected] = useState(null); // check number picked on chart 2 or the table
 
   // Runs when the form is submitted: validate, call the API, update the screen
@@ -100,8 +102,8 @@ export default function Checker() {
   // Data for chart 1: the current result
   const phishingPct = result ? Math.round(result.phishingProb * 100) : 0;
   const probs = [
-    { name: "Phishing", value: phishingPct },
-    { name: "Legitimate", value: 100 - phishingPct },
+    { name: "Phishing", Phishing: phishingPct },
+    { name: "Legitimate", Legitimate: 100 - phishingPct },
   ];
 
   // Data for chart 2: session history, narrowed by the filter
@@ -163,15 +165,16 @@ export default function Checker() {
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={probs} margin={{ top: 10, bottom: 20, left: 20, right: 50 }} accessibilityLayer>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" label={{ value: "Class", position: "insideBottom", offset: -10 }} />
-              <YAxis domain={[0, 100]} unit="%" width={64} label={{ value: "Probability (%)", angle: -90, position: "insideLeft" }} />
+              <XAxis dataKey="name" tick={AXIS_TICK} label={{ value: "Class", position: "insideBottom", offset: -10, fill: AXIS_COLOUR }} />
+              <YAxis domain={[0, 100]} unit="%" width={76} tick={AXIS_TICK} label={{ value: "Probability (%)", angle: -90, position: "insideLeft", fill: AXIS_COLOUR }} />
               <Tooltip formatter={(v) => v + "%"} />
               <Legend verticalAlign="top" />
-              <ReferenceLine y={50} stroke="#111827" strokeDasharray="6 4" label={{ value: "50%", position: "right" }} />
-              <Bar dataKey="value" name="Model probability (%)" fill="#1d4ed8" />
+              <ReferenceLine y={50} stroke="#111827" strokeDasharray="6 4" label={{ value: "50%", position: "right", fill: AXIS_COLOUR }} />
+              <Bar dataKey="Phishing" stackId="class" fill="#b42318" />
+              <Bar dataKey="Legitimate" stackId="class" fill="#067647" />
             </BarChart>
           </ResponsiveContainer>
-          <p>Text version: Phishing {probs[0].value}%, Legitimate {probs[1].value}%.</p>
+          <p>Text version: Phishing {phishingPct}%, Legitimate {100 - phishingPct}%.</p>
         </section>
       )}
 
@@ -189,8 +192,8 @@ export default function Checker() {
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={shown} margin={{ top: 10, bottom: 20, left: 20, right: 50 }} accessibilityLayer>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="check" allowDecimals={false} label={{ value: "Check number", position: "insideBottom", offset: -10 }} />
-              <YAxis domain={[0, 100]} unit="%" width={64} label={{ value: "Probability (%)", angle: -90, position: "insideLeft" }} />
+              <XAxis dataKey="check" allowDecimals={false} tick={AXIS_TICK} label={{ value: "Check number", position: "insideBottom", offset: -10, fill: AXIS_COLOUR }} />
+              <YAxis domain={[0, 100]} unit="%" width={76} tick={AXIS_TICK} label={{ value: "Probability (%)", angle: -90, position: "insideLeft", fill: AXIS_COLOUR }} />
               <Tooltip formatter={(v) => v + "%"} labelFormatter={(n) => `Check ${n}`} />
               <Legend verticalAlign="top" />
               <Line type="monotone" dataKey="probability" name="Phishing probability" stroke="#b42318" strokeWidth={2}
