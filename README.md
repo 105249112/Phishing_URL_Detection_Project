@@ -428,6 +428,75 @@ Supporting evidence includes the npm and Python dependency audits, OWASP ZAP rep
 
 
  Thank you
+
+ ## FastAPI Backend (Assignment 3)
+
+
+Overview
+The FastAPI backend connects the React URL checker to the trained Random Forest classifier from Assignment 2. It validates the submitted URL, extracts the same lexical URL features used during model training, and returns a classification and probability scores in JSON format. Pydantic defines the request and response schemas.
+
+Setup and Run
+From the project root, with Python installed, install the backend dependencies:
+python3 -m pip install -r backend/requirements.txt
+
+The saved model must be present at Models/phishing_classifier.joblib, and the feature extractor must be available at Source_code/feature_extraction.py. Start the API from the project root:
+python3 -m uvicorn backend.main:app --reload
+
+The API is available at http://127.0.0.1:8000, with interactive documentation at http://127.0.0.1:8000/docs. Start the backend before running the React frontend.
+
+API Endpoints
+GET /health reports whether the application and saved model are ready. A successful response is:
+{
+  "status": "ok",
+  "model_ready": true,
+  "message": "Phishing URL Detection API and model are ready"
+}
+POST /predict accepts a JSON request containing a URL:
+{
+  "url": "https://www.example.com"
+}
+A successful response contains the URL, predicted class (BENIGN or MALICIOUS), prediction confidence, and malicious-class probability:
+{
+  "url": "https://www.example.com",
+  "prediction": "BENIGN",
+  "confidence": 0.95,
+  "malicious_probability": 0.05
+}
+
+The classification and probability values above are illustrative, not recorded model outputs. Probability values are between 0 and 1 and rounded to four decimal places.
+
+## Model Integration
+The Random Forest model is loaded from Models/phishing_classifier.joblib once during the FastAPI application lifespan startup. For each valid URL, the backend calls extract_features() from Source_code/feature_extraction.py, creates a Pandas DataFrame with the model's expected feature columns, and calls predict() and predict_proba(). The backend reuses the Assignment 2 model rather than retraining it on each request.
+Validation and Error Handling
+The request schema requires a URL string of 1–2,048 characters. Additional validation checks the HTTP/HTTPS scheme, hostname, whitespace and port format. Errors are returned in JSON using a detail field, without exposing internal model exceptions.
+
+HTTP status	Meaning
+200	Successful request
+400	Invalid Content-Length header
+413	POST request body exceeds 8,192 bytes
+422	Missing, malformed or invalid URL
+429	Prediction rate limit exceeded
+500	Unexpected model prediction failure
+503	Model unavailable or prediction capacity reached
+
+
+Backend Protections
+- Rate limiting: SlowAPI limits /predict to 10 requests per minute per client IP and returns HTTP 429 when exceeded.
+- Body-size restriction: Custom ASGI middleware checks both Content-Length and received request bytes, rejecting POST bodies over 8,192 bytes (8 KiB), including streamed bodies.
+- CORS: The backend permits the local React development origins http://localhost:5173 and http://127.0.0.1:5173.
+- Concurrent inference protection: The version of backend code reviewed includes a bounded semaphore allowing at most two concurrent inferences per backend process. Additional requests receive HTTP 503 and a Retry-After header. Its separate experiment and limitations are documented in Section 2.7.2; final integration into main should be verified after the security branches are merged.
+- Controlled DoS test mode: DOS_TEST_MODE is disabled by default and introduces a simulated two-second inference delay only when deliberately enabled for local testing. It must not be enabled in deployment.
+
+Automated Backend Tests
+Run the backend test suite from the project root:
+python3 -m pytest backend/tests/test_main.py -v
+The 13 tests cover the health endpoint, a valid prediction, empty and missing URLs, unsupported schemes, invalid ports, excessively long URLs, URLs containing spaces, rate limiting, unavailable model, model failure, oversized request bodies, and streamed oversized bodies without Content-Length.
+
+Recorded result: 13 passed, 0 failed, 2 dependency-related warnings, in 3.74 seconds (Python 3.13.14). These tests confirm the covered API behaviours; they do not replace live frontend-backend integration testing or Aarriz's separate concurrency experiments.
+
+Limitations
+The classifier uses lexical URL features, not the content of the destination website, and may produce false positives or false negatives. The IP-based rate limit and per-process inference semaphore do not provide complete protection against distributed denial-of-service attacks. Successful operation depends on the saved model and feature extraction code being present and compatible.
+
 ## Frontend
 
 A React app where the user pastes a URL and sees PHISHING or LEGITIMATE as the most prominent element, with the model's confidence and a caution message. It sends the URL to the backend `POST /predict` endpoint and shows the reply.
