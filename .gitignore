@@ -45,3 +45,7 @@ __pycache__/
 
 .DS_Store
 **/.DS_Store
+
+# Section 2.8 datasets containing raw URL samples
+Datasets/section_2_8_selected_malicious.csv
+Datasets/section_2_8_targeted_malicious.csv

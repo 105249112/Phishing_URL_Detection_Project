@@ -15,6 +15,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.types import ASGIApp, Receive, Scope, Send
 from Source_code.feature_extraction import extract_features
+from Source_code.url_normalization import normalize_url_for_features
 from threading import BoundedSemaphore  ### this is because, semaphore is a mechanism that limits how many tasks may use a resource at the same time. 
 import os 
 import time 
@@ -308,12 +309,17 @@ def predict_url(request: Request, payload: PredictionRequest):
             detail="Prediction capacity reached. Please retry later.",
             headers={"Retry-After": "2"}
     )
-
     try:
         if DOS_TEST_MODE:
             time.sleep(DOS_TEST_DELAY)
 
-        features = extract_features(url)
+        # Section 2.8: Created a normalized representation
+        # for ML feature extraction.
+        # To Preserve the original URL for the API response.
+        normalized_url = normalize_url_for_features(url)
+
+        features = extract_features(normalized_url)
+
         feature_df = pd.DataFrame(
             [features],
             columns=ml_model.feature_names_in_
@@ -326,6 +332,7 @@ def predict_url(request: Request, payload: PredictionRequest):
         malicious_probability = float(
             probabilities[classes.index(1)]
         )
+
         confidence = float(
             probabilities[classes.index(predicted_class)]
         )
@@ -336,10 +343,15 @@ def predict_url(request: Request, payload: PredictionRequest):
             confidence=round(confidence, 4),
             malicious_probability=round(malicious_probability, 4)
         )
+
+    except HTTPException:
+        raise
+
     except Exception:
         raise HTTPException(
             status_code=500,
             detail="Unable to analyse this URL"
         )
+
     finally:
         inference_slots.release()
