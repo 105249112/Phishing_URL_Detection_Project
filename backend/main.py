@@ -158,6 +158,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={"detail": "Invalid request. Please provide a valid URL."}
     )
 
+@app.exception_handler(Exception)
+async def unexpected_error_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected server error occurred."}
+    )
+
 class PredictionRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
 
@@ -167,7 +174,39 @@ class PredictionResponse(BaseModel):
     confidence: float
     malicious_probability: float
 
-@app.get("/health", tags=["Health"])
+@app.get(
+    "/health",
+    tags=["Health"],
+    summary="Check API and model health",
+    description=(
+        "Checks whether the FastAPI server is running "
+        "and the trained machine learning model is loaded and ready."
+    ),
+    responses={
+        200: {
+            "description": "API and model are ready",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "ok",
+                        "model_ready": True,
+                        "message": "Phishing URL Detection API and model are ready"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Model unavailable",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Machine-learning model is not ready"
+                    }
+                }
+            }
+        }
+    }
+)
 def health_check():
     if ml_model is None:
         raise HTTPException(
@@ -180,7 +219,54 @@ def health_check():
         "message": "Phishing URL Detection API and model are ready"
     }
 
-@app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
+@app.post(
+    "/predict",
+    response_model=PredictionResponse,
+    tags=["Prediction"],
+    summary="Analyse a URL for phishing",
+    description=(
+        "Accepts an HTTP or HTTPS URL, extracts its features, "
+        "and uses the trained Random Forest model to classify "
+        "it as BENIGN or MALICIOUS."
+    ),
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "url": "https://www.google.com"
+                    }
+                }
+            }
+        }
+    },
+responses={
+        200: {
+            "description": "URL analysed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "url": "https://www.google.com",
+                        "prediction": "BENIGN",
+                        "confidence": 0.95,
+                        "malicious_probability": 0.05
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Invalid URL",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Please enter a valid HTTP or HTTPS website URL"
+                    }
+                }
+            }
+        }
+    }
+)
+
 @limiter.limit("10/minute")
 def predict_url(request: Request, payload: PredictionRequest):
     if ml_model is None:

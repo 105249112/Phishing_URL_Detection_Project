@@ -167,5 +167,24 @@ def test_oversized_body_without_content_length():
 
     assert response.status_code == 413
 
+def test_unexpected_error_handler():
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/this-route-does-not-exist")
 
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Not Found"
+
+def test_global_unexpected_error_handler():
+    @app.get("/test-unexpected-error", include_in_schema=False)
+    def trigger_error():
+        raise RuntimeError("Sensitive internal information")
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/test-unexpected-error")
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": "An unexpected server error occurred."
+    }
+    assert "Sensitive internal information" not in response.text
     
