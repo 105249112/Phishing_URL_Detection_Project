@@ -46,20 +46,14 @@ Dataset Structure:
 the below is exact project every teammember followed throughout the project: 
 
 
-Phishing URL Detection Project/
+
+Phishing_URL_Detection_Project/
 │
 ├── Datasets/
-│   ├── Qr_benign/
-│   │   └── benign QR-code images
-│   │
-│   ├── Qr_malicious/
-│   │   └── malicious QR-code images
-│   │
 │   ├── base_processed.csv
 │   ├── combined_cleaned.csv
 │   ├── combined_dataset.csv
 │   ├── feature_dataset.csv
-│   ├── qr_decode_failures.csv
 │   ├── qr_processed.csv
 │   └── URL dataset.csv
 │
@@ -71,27 +65,69 @@ Phishing URL Detection Project/
 │   └── phishing_classifier.joblib
 │
 ├── Source_code/
-│   ├
-│   │
 │   ├── base_processing.py
 │   ├── Classification.py
 │   ├── clustering_processing.py
-│   ├── cnn_confusion_matrix.py
 │   ├── combined_quality_check.py
 │   ├── data_analysis.py
 │   ├── feature_extraction.py
 │   ├── innovation_model.py
 │   ├── main.py
 │   ├── merge_processing.py
-│   ├── model_comparison_graph.py
 │   ├── model_evaluation.py
-│   └── Qr_decoding.py
+│   ├── Qr_decoding.py
+│   └── url_normalization.py
 │
-├── venv/
+├── backend/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── tests/
+│       ├── test_main.py
+│       ├── dos_concurrency_check.py
+│       ├── evasion_select_samples.py
+│       ├── evasion_attack.py
+│       ├── evasion_validate.py
+│       ├── evasion_api_validate.py
+│       ├── evasion_defence_check.py
+│       ├── evasion_defended_evaluation.py
+│       └── evasion_benign_check.py
+│
+├── frontend 2/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── Checker.jsx
+│   │   ├── ErrorBoundary.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vite.config.js
+│
+├── security_evidence/
+│   ├── section_2.7/
+│   │   └── [dependency audit, ZAP and DoS evidence]
+│   │
+│   └── section_2.8/
+│       ├── baseline/
+│       │   └── evasion_attack_results.csv
+│       ├── defended/
+│       │   ├── evasion_defended_results.csv
+│       │   └── benign_regression_results.csv
+│       └── screenshots/
+│           ├── Evasion_01_Baseline_Attack.jpg
+│           ├── Evasion_02_Encoding_Validation.jpg
+│           ├── Evasion_03_Fastapi_Before_Defence.jpg
+│           ├── Evasion_04_Defended_Attack.jpg
+│           ├── Evasion_05_Backend_Regression.jpg
+│           ├── Evasion_06_API_After_Defence.jpg
+│           ├── Evasion_07_DoS_Regression.jpg
+│           ├── Evasion_08_Benign_Regression.jpg
+│           └── Evasion_09_Normalization_Implementation.jpg
 │
 ├── .gitignore
 ├── README.md
-└── requirements.txt
+└── requirments.txt
+
 
 #### (To Check a URL whether it is malicious or not - Run main.py and choose option 4 and paste the URL to get the result)
 
@@ -284,7 +320,141 @@ cd Source_code
 ##### Assignment 3 readme sections: ###########
 
 
-###### 2.6 Threat Model
+### How to run the project files to start the web application 
+
+After cloning the repo to the local computer, 
+
+1. Backend Setup: 
+
+create a virtual environment with the command (python3 -m venv .venv
+source .venv/bin/activate)
+
+Next install the requrired dependencies using the command - (python -m pip install -r backend/requirements.txt)
+
+Then start the FastAPi backend from the project root:  python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+2. Frontend Setup: 
+
+open a second terminal at the project root, keeping the backend running in the previous terminal.
+
+then run this command to start the frontend from the folder frontend2: 
+
+npm ci
+npm run dev
+
+once the frontend starts, you can see the url to frontend webpage (http://localhost:5173)
+
+in the web interface you can check whether a URL is malicious or benign. 
+
+
+3. To run backend tests: 
+
+
+from the project root, with the python venv environment active: 
+
+run this ocmmand:    python -m pytest backend/tests/
+
+
+
+
+
+
+
+ ## FastAPI Backend (Assignment 3)
+
+
+Overview
+The FastAPI backend connects the React URL checker to the trained Random Forest classifier from Assignment 2. It validates the submitted URL, extracts the same lexical URL features used during model training, and returns a classification and probability scores in JSON format. Pydantic defines the request and response schemas.
+
+Setup and Run
+From the project root, with Python installed, install the backend dependencies:
+python3 -m pip install -r backend/requirements.txt
+
+The saved model must be present at Models/phishing_classifier.joblib, and the feature extractor must be available at Source_code/feature_extraction.py. Start the API from the project root:
+python3 -m uvicorn backend.main:app --reload
+
+The API is available at http://127.0.0.1:8000, with interactive documentation at http://127.0.0.1:8000/docs. Start the backend before running the React frontend.
+
+API Endpoints
+GET /health reports whether the application and saved model are ready. A successful response is:
+{
+  "status": "ok",
+  "model_ready": true,
+  "message": "Phishing URL Detection API and model are ready"
+}
+POST /predict accepts a JSON request containing a URL:
+{
+  "url": "https://www.example.com"
+}
+A successful response contains the URL, predicted class (BENIGN or MALICIOUS), prediction confidence, and malicious-class probability:
+{
+  "url": "https://www.example.com",
+  "prediction": "BENIGN",
+  "confidence": 0.95,
+  "malicious_probability": 0.05
+}
+
+The classification and probability values above are illustrative, not recorded model outputs. Probability values are between 0 and 1 and rounded to four decimal places.
+
+## Model Integration
+The Random Forest model is loaded from Models/phishing_classifier.joblib once during the FastAPI application lifespan startup. For each valid URL, the backend calls extract_features() from Source_code/feature_extraction.py, creates a Pandas DataFrame with the model's expected feature columns, and calls predict() and predict_proba(). The backend reuses the Assignment 2 model rather than retraining it on each request.
+Validation and Error Handling
+The request schema requires a URL string of 1–2,048 characters. Additional validation checks the HTTP/HTTPS scheme, hostname, whitespace and port format. Errors are returned in JSON using a detail field, without exposing internal model exceptions.
+
+HTTP status	Meaning
+200	Successful request
+400	Invalid Content-Length header
+413	POST request body exceeds 8,192 bytes
+422	Missing, malformed or invalid URL
+429	Prediction rate limit exceeded
+500	Unexpected model prediction failure
+503	Model unavailable or prediction capacity reached
+
+
+Backend Protections
+- Rate limiting: SlowAPI limits /predict to 10 requests per minute per client IP and returns HTTP 429 when exceeded.
+- Body-size restriction: Custom ASGI middleware checks both Content-Length and received request bytes, rejecting POST bodies over 8,192 bytes (8 KiB), including streamed bodies.
+- CORS: The backend permits the local React development origins http://localhost:5173 and http://127.0.0.1:5173.
+- Concurrent inference protection: The version of backend code reviewed includes a bounded semaphore allowing at most two concurrent inferences per backend process. Additional requests receive HTTP 503 and a Retry-After header. Its separate experiment and limitations are documented in Section 2.7.2; final integration into main should be verified after the security branches are merged.
+- Controlled DoS test mode: DOS_TEST_MODE is disabled by default and introduces a simulated two-second inference delay only when deliberately enabled for local testing. It must not be enabled in deployment.
+
+Automated Backend Tests
+Run the backend test suite from the project root:
+python3 -m pytest backend/tests/test_main.py -v
+The 13 tests cover the health endpoint, a valid prediction, empty and missing URLs, unsupported schemes, invalid ports, excessively long URLs, URLs containing spaces, rate limiting, unavailable model, model failure, oversized request bodies, and streamed oversized bodies without Content-Length.
+
+Recorded result: 13 passed, 0 failed, 2 dependency-related warnings, in 3.74 seconds (Python 3.13.14). These tests confirm the covered API behaviours; they do not replace live frontend-backend integration testing or Aarriz's separate concurrency experiments.
+
+Limitations
+The classifier uses lexical URL features, not the content of the destination website, and may produce false positives or false negatives. The IP-based rate limit and per-process inference semaphore do not provide complete protection against distributed denial-of-service attacks. Successful operation depends on the saved model and feature extraction code being present and compatible.
+
+## Frontend
+
+A React app where the user pastes a URL and sees PHISHING or LEGITIMATE as the most prominent element, with the model's confidence and a caution message. It sends the URL to the backend `POST /predict` endpoint and shows the reply.
+
+To run the frontend (the backend must already be running at http://localhost:8000; it needs Node.js 20 or newer):
+
+```bash
+cd "frontend 2"
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+- Pinned versions (in `frontend 2/package.json`, with `package-lock.json`): react and react-dom 19.1.0, react-router-dom 7.18.5, recharts 2.15.4, vite 6.4.5, @vitejs/plugin-react 4.5.2.
+- Files: `src/Checker.jsx` (form, validation, API call, result and charts), `src/App.jsx` (routes), `src/ErrorBoundary.jsx` (crash fallback), `src/main.jsx` (entry point), `src/index.css` (styles).
+- States: idle, loading, success and error. A "Page not found" page covers unknown addresses and an error boundary covers unexpected failures, so the user never sees a blank screen. One `status` value decides which screen is shown, following React's approach of describing each visual state and switching between them (React, n.d.).
+- Charts: (1) the class probabilities for the latest check, and (2) the phishing probability of every check this session, with a filter and click-to-view details. Both have titles, labelled axes, legends, tooltips and a text or table alternative.
+- Validation: the page checks the scheme, spaces, hostname and length for usability only. The backend repeats these checks and is the security boundary.
+- Styling: one colour scheme is defined once as CSS custom properties (MDN Web Docs, n.d.c), and a media query adjusts the layout for narrow screens (MDN Web Docs, n.d.b).
+- Accessibility: every input has a label, results and errors are announced to screen readers, everything works by keyboard with a visible `:focus-visible` outline (MDN Web Docs, n.d.a), and the layout works at phone width.
+- Limitations: the model only sees the URL text, so it can misjudge some links. The session history is lost on refresh, and there are no automated frontend tests.
+
+
+
+
+###### section 2.6 Threat Model
 
 The Phishing URL Detection application is a web application using React and FastAPI. This application uses a trained Random Forest classifier to detect potentially phishing URLs. The main threat actor is the phisher who will try to avoid detection by changing the characteristics of URLs to be classified as legitimate. The second threat actor is an abusive API users who will try to cause problems with the application or find any vulnerabilities.
 
@@ -613,100 +783,17 @@ The current API test verifies the defended behaviour. Reproducing the historical
 
 
 
- ## FastAPI Backend (Assignment 3)
-
-
-Overview
-The FastAPI backend connects the React URL checker to the trained Random Forest classifier from Assignment 2. It validates the submitted URL, extracts the same lexical URL features used during model training, and returns a classification and probability scores in JSON format. Pydantic defines the request and response schemas.
-
-Setup and Run
-From the project root, with Python installed, install the backend dependencies:
-python3 -m pip install -r backend/requirements.txt
-
-The saved model must be present at Models/phishing_classifier.joblib, and the feature extractor must be available at Source_code/feature_extraction.py. Start the API from the project root:
-python3 -m uvicorn backend.main:app --reload
-
-The API is available at http://127.0.0.1:8000, with interactive documentation at http://127.0.0.1:8000/docs. Start the backend before running the React frontend.
-
-API Endpoints
-GET /health reports whether the application and saved model are ready. A successful response is:
-{
-  "status": "ok",
-  "model_ready": true,
-  "message": "Phishing URL Detection API and model are ready"
-}
-POST /predict accepts a JSON request containing a URL:
-{
-  "url": "https://www.example.com"
-}
-A successful response contains the URL, predicted class (BENIGN or MALICIOUS), prediction confidence, and malicious-class probability:
-{
-  "url": "https://www.example.com",
-  "prediction": "BENIGN",
-  "confidence": 0.95,
-  "malicious_probability": 0.05
-}
-
-The classification and probability values above are illustrative, not recorded model outputs. Probability values are between 0 and 1 and rounded to four decimal places.
-
-## Model Integration
-The Random Forest model is loaded from Models/phishing_classifier.joblib once during the FastAPI application lifespan startup. For each valid URL, the backend calls extract_features() from Source_code/feature_extraction.py, creates a Pandas DataFrame with the model's expected feature columns, and calls predict() and predict_proba(). The backend reuses the Assignment 2 model rather than retraining it on each request.
-Validation and Error Handling
-The request schema requires a URL string of 1–2,048 characters. Additional validation checks the HTTP/HTTPS scheme, hostname, whitespace and port format. Errors are returned in JSON using a detail field, without exposing internal model exceptions.
-
-HTTP status	Meaning
-200	Successful request
-400	Invalid Content-Length header
-413	POST request body exceeds 8,192 bytes
-422	Missing, malformed or invalid URL
-429	Prediction rate limit exceeded
-500	Unexpected model prediction failure
-503	Model unavailable or prediction capacity reached
-
-
-Backend Protections
-- Rate limiting: SlowAPI limits /predict to 10 requests per minute per client IP and returns HTTP 429 when exceeded.
-- Body-size restriction: Custom ASGI middleware checks both Content-Length and received request bytes, rejecting POST bodies over 8,192 bytes (8 KiB), including streamed bodies.
-- CORS: The backend permits the local React development origins http://localhost:5173 and http://127.0.0.1:5173.
-- Concurrent inference protection: The version of backend code reviewed includes a bounded semaphore allowing at most two concurrent inferences per backend process. Additional requests receive HTTP 503 and a Retry-After header. Its separate experiment and limitations are documented in Section 2.7.2; final integration into main should be verified after the security branches are merged.
-- Controlled DoS test mode: DOS_TEST_MODE is disabled by default and introduces a simulated two-second inference delay only when deliberately enabled for local testing. It must not be enabled in deployment.
-
-Automated Backend Tests
-Run the backend test suite from the project root:
-python3 -m pytest backend/tests/test_main.py -v
-The 13 tests cover the health endpoint, a valid prediction, empty and missing URLs, unsupported schemes, invalid ports, excessively long URLs, URLs containing spaces, rate limiting, unavailable model, model failure, oversized request bodies, and streamed oversized bodies without Content-Length.
-
-Recorded result: 13 passed, 0 failed, 2 dependency-related warnings, in 3.74 seconds (Python 3.13.14). These tests confirm the covered API behaviours; they do not replace live frontend-backend integration testing or Aarriz's separate concurrency experiments.
-
-Limitations
-The classifier uses lexical URL features, not the content of the destination website, and may produce false positives or false negatives. The IP-based rate limit and per-process inference semaphore do not provide complete protection against distributed denial-of-service attacks. Successful operation depends on the saved model and feature extraction code being present and compatible.
-
-## Frontend
-
-A React app where the user pastes a URL and sees PHISHING or LEGITIMATE as the most prominent element, with the model's confidence and a caution message. It sends the URL to the backend `POST /predict` endpoint and shows the reply.
-
-To run the frontend (the backend must already be running at http://localhost:8000; it needs Node.js 20 or newer):
-
-```bash
-cd "frontend 2"
-npm install
-npm run dev
-```
-
-Then open http://localhost:5173.
-
-- Pinned versions (in `frontend 2/package.json`, with `package-lock.json`): react and react-dom 19.1.0, react-router-dom 7.18.5, recharts 2.15.4, vite 6.4.5, @vitejs/plugin-react 4.5.2.
-- Files: `src/Checker.jsx` (form, validation, API call, result and charts), `src/App.jsx` (routes), `src/ErrorBoundary.jsx` (crash fallback), `src/main.jsx` (entry point), `src/index.css` (styles).
-- States: idle, loading, success and error. A "Page not found" page covers unknown addresses and an error boundary covers unexpected failures, so the user never sees a blank screen. One `status` value decides which screen is shown, following React's approach of describing each visual state and switching between them (React, n.d.).
-- Charts: (1) the class probabilities for the latest check, and (2) the phishing probability of every check this session, with a filter and click-to-view details. Both have titles, labelled axes, legends, tooltips and a text or table alternative.
-- Validation: the page checks the scheme, spaces, hostname and length for usability only. The backend repeats these checks and is the security boundary.
-- Styling: one colour scheme is defined once as CSS custom properties (MDN Web Docs, n.d.c), and a media query adjusts the layout for narrow screens (MDN Web Docs, n.d.b).
-- Accessibility: every input has a label, results and errors are announced to screen readers, everything works by keyboard with a visible `:focus-visible` outline (MDN Web Docs, n.d.a), and the layout works at phone width.
-- Limitations: the model only sees the URL text, so it can misjudge some links. The session history is lost on refresh, and there are no automated frontend tests.
-
+ 
 ### References for frontend
 
 - MDN Web Docs (n.d.a) *:focus-visible CSS pseudo-class*. Available at: https://developer.mozilla.org/docs/Web/CSS/:focus-visible.
 - MDN Web Docs (n.d.b) *Media query fundamentals*. Available at: https://developer.mozilla.org/en-US/docs/Learn/CSS/CSS_layout/Media_queries.
 - MDN Web Docs (n.d.c) *Using CSS custom properties (variables)*. Available at: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_Variables.
 - React (n.d.) *Reacting to Input with State*. Available at: https://react.dev/learn/reacting-to-input-with-state.
+
+
+Generative AI use: 
+
+1. used it to the learn about how the detection evasion attack works. 
+2. used it  to develop ideas on implementing URL normalisation as a defence against detection-evasion attacks.
+3. used it for the checking the csv files got during the experiment to verify the result. 
