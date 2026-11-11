@@ -317,7 +317,7 @@ cd Source_code
 
 
 
-##### Assignment 3 readme sections: ###########
+### Assignment 3 readme sections: 
 
 
 ### How to run the project files to start the web application 
@@ -454,7 +454,7 @@ Then open http://localhost:5173.
 
 
 
-###### section 2.6 Threat Model
+### section 2.6 Threat Model
 
 The Phishing URL Detection application is a web application using React and FastAPI. This application uses a trained Random Forest classifier to detect potentially phishing URLs. The main threat actor is the phisher who will try to avoid detection by changing the characteristics of URLs to be classified as legitimate. The second threat actor is an abusive API users who will try to cause problems with the application or find any vulnerabilities.
 
@@ -465,11 +465,11 @@ Main threats are DoS attacks due to excessive or expensive requests to predict. 
 Denial of service protection was chosen to protect against the threats identified. Misconfiguration and vulnerable dependencies were also chosen from Section 2.7. Section 2.8 looks at how evasion can be prevented by using controlled URL manipulation, and if input normalisation helps to make the model more robust against these types of attacks.
 
 
-###### Section 2.7 Security Defences
+### Section 2.7 Security Defences
 
 Two security defences were selected based on the threat model in Section 2.6: Misconfiguration and Vulnerable Dependencies (Intermediate) and Denial-of-Service Protection (Advanced). These defences address risks associated with insecure third-party libraries, missing security configurations and excessive requests to the machine-learning prediction endpoint.
 
-#### 2.7.1 Misconfiguration and Vulnerable Dependencies (Intermediate Defence)
+### 2.7.1 Misconfiguration and Vulnerable Dependencies (Intermediate Defence)
 
 Threat and justification
 
@@ -518,7 +518,7 @@ Auditing dependencies will only identify any vulnerabilities that have been repo
 
 
 
-###### 2.7.2  Denial-of-Service Protection (Advanced Defence)
+### 2.7.2  Denial-of-Service Protection (Advanced Defence)
 
 
 Threat & Justification
@@ -595,7 +595,7 @@ Supporting evidence includes the npm and Python dependency audits, OWASP ZAP rep
 
 ## Section 2.8 - Advanced Security (Detection Evasion) 
 
-2.8.1 Threat and Justification
+#### 2.8.1 Threat and Justification
 
 The Phishing URL Detection application uses a Random Forest classifier trained on lexical URL features, including URL length, suspicious keywords, character counts and domain characteristics. An attacker may attempt to manipulate the structure or appearance of a malicious URL to influence these features and cause the classifier to return a benign prediction.
 
@@ -610,7 +610,7 @@ These attacks have been chosen because the current has_suspicious_keyword() feat
 I wanted to see how much the model's predictions would change by making these changes to the URLs in a controlled way. This will help determine if normalising the URLs reduces the evasion.
 
 
-2.8.2 Attack Implementation
+#### 2.8.2 Attack Implementation
 
 The attack was implemented in backend/tests/evasion_attack.py using the trained Random Forest pipeline and the original feature extractor in Source_code/feature_extraction.py.
 
@@ -632,7 +632,7 @@ The sample-selection script is backend/tests/evasion_select_samples.py. The atta
 A candidate prediction flip was counted when an originally malicious-classified URL was classified as benign after modification.
 
 
-2.8.3 Baseline Attack Results
+#### 2.8.3 Baseline Attack Results
 
 The baseline experiment evaluated 100 original malicious samples and generated 174 modified variants.
 
@@ -650,7 +650,7 @@ These findings demonstrate a model-level detection weakness for the tested input
 
 
 
-2.8.4 Normalisation Defence Implementation
+#### 2.8.4 Normalisation Defence Implementation
 
 A preprocessing defence was implemented in Source_code/url_normalization.py using the function normalize_url_for_features().
 
@@ -674,7 +674,7 @@ The defence does not attempt to modify the hostname or normalise all possible un
 
 
 
-2.8.5 Defended Experiment and Results
+#### 2.8.5 Defended Experiment and Results
 
 The defended evaluation was implemented in backend/tests/evasion_defended_evaluation.py.
 
@@ -691,7 +691,7 @@ The corrected behaviour was confirmed through the live FastAPI /predict endpoint
 The results of the defended sample can be found in security_evidence/section_2.8/defended/evasion_defended_results.csv
 
 
-2.8.6 Benign Regression and Defence Cost
+#### 2.8.6 Benign Regression and Defence Cost
 
 To investigate potential false-positive effects, backend/tests/evasion_benign_check.py evaluated 500 benign URLs sampled reproducibly from the held-out test dataset.
 
@@ -705,7 +705,7 @@ The initial run time of the original workflow was found to be approximately 0.04
 Therefore, the measurements do not establish that normalisation improves performance or has negligible overhead. A dedicated repeated benchmark would be needed to estimate the computational cost reliably. Normalisation also has a potential semantic cost: removing characters from a URL's path or query may change how that URL would be interpreted by a destination service. The implementation only modifies the representation supplied to the classifier.
 
 
-2.8.7 Limitations and Evaluation
+#### 2.8.7 Limitations and Evaluation
 
 The experiment demonstrated that the original feature extractor could miss a suspicious keyword when an invisible Unicode character interrupted the text. Normalising selected invisible characters corrected the observed T002 misclassification.
 
@@ -753,7 +753,7 @@ Evasion_09_Normalization_Implementation.jpg         Normalisation implementation
 The baseline and defended CSV files contain detailed experimental measurements without including the raw selected phishing URLs.
 
 
-2.8.9 Reproducing the Experiment
+#### 2.8.9 Reproducing the Experiment
 
 Run the following commands from the project root after installing the Python dependencies.
 
