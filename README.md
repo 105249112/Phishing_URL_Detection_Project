@@ -286,7 +286,7 @@ cd Source_code
 
 ###### 2.6 Threat Model
 
-The Phishing URL Detection application is a web application using React and FastAPI. This application uses a trained Random Forest classifier to detect potentially phishing URLs. The main threat actor is the phisher who will try to avoid detection by changing the characteristics of URLs to be classified as legitimate. The second threat actor is an abusive API user who will try to cause problems with the application or find any vulnerabilities.
+The Phishing URL Detection application is a web application using React and FastAPI. This application uses a trained Random Forest classifier to detect potentially phishing URLs. The main threat actor is the phisher who will try to avoid detection by changing the characteristics of URLs to be classified as legitimate. The second threat actor is an abusive API users who will try to cause problems with the application or find any vulnerabilities.
 
 Attackers can craft malicious URLs using the React frontend, or can manually issue HTTP requests to /predict FastAPI endpoint. Attackers can also query the model repeatedly, to collect information about the model predictions (labels, confidence scores), inference time, and errors. Attackers are assumed not to have admin access to the server, nor control over the trained model.
 
@@ -422,6 +422,195 @@ The Intermediate defence reduces exposure to known vulnerable dependencies and u
 Both defences were evaluated using security tools, controlled experiments and application regression testing. The results demonstrate measurable improvements while preserving the phishing URL checker's main functionality.
 
 Supporting evidence includes the npm and Python dependency audits, OWASP ZAP reports, concurrency-test scripts, response-time measurements and application screenshots. These are retained under security_evidence/section_2.7/.
+
+## Section 2.8 - Advanced Security (Detection Evasion) 
+
+2.8.1 Threat and Justification
+
+The Phishing URL Detection application uses a Random Forest classifier trained on lexical URL features, including URL length, suspicious keywords, character counts and domain characteristics. An attacker may attempt to manipulate the structure or appearance of a malicious URL to influence these features and cause the classifier to return a benign prediction.
+
+This experiment investigated two Unicode-based detection-evasion techniques:
+
+1. Unicode lookalike substitution: Replacing selected Latin letters with visually similar Cyrillic characters.
+
+2. Zero-width character insertion: Inserting an invisible Unicode character into a suspicious keyword to interrupt  exact keyword matching.
+
+These attacks have been chosen because the current has_suspicious_keyword() feature looks for exact matches of keywords. By adding a zero-width character they can be avoided.
+
+I wanted to see how much the model's predictions would change by making these changes to the URLs in a controlled way. This will help determine if normalising the URLs reduces the evasion.
+
+
+2.8.2 Attack Implementation
+
+The attack was implemented in backend/tests/evasion_attack.py using the trained Random Forest pipeline and the original feature extractor in Source_code/feature_extraction.py.
+
+
+The experiment followed these steps:
+
+1. Reconstructed the original stratified training, validation and testing split using the same random seed (42) as the classification pipeline.
+
+2. Selected 100 malicious URLs from the held-out test dataset that the classifier originally detected correctly and that contained suspicious keywords.
+
+3. Generated Unicode lookalike and zero-width character variations by modifying matching keywords in the URL path or query.
+
+4. Extracted lexical features and evaluated the original and modified inputs using the saved classifier.
+
+5. Recorded predicted classes, malicious probabilities, suspicious-keyword feature values and candidate prediction flips.
+
+The sample-selection script is backend/tests/evasion_select_samples.py. The attack evaluation results are stored in security_evidence/section_2.8/baseline/evasion_attack_results.csv.
+
+A candidate prediction flip was counted when an originally malicious-classified URL was classified as benign after modification.
+
+
+2.8.3 Baseline Attack Results
+
+The baseline experiment evaluated 100 original malicious samples and generated 174 modified variants.
+
+The result of this baseline attack has been saved as a screenshot under the name Evasion_01_Baseline in folder secuirty evidence>section_2..8>screenshots. 
+
+The Unicode lookalike technique changed the suspicious-keyword feature for some inputs but did not cause a classification flip in the evaluated variants.
+
+One zero-width variant, identified as sample T002, caused the Random Forest model to change its prediction from MALICIOUS to BENIGN.
+
+Again additional validation of T002 was done and u can find the result in the screenshot - Evasion_03 in the folder secuirty evidence>section_2..8>screenshots. 
+
+The same classification behaviour was confirmed through the FastAPI /predict endpoint before integrating the defence.
+
+These findings demonstrate a model-level detection weakness for the tested input manipulation. However, only one of the 174 variants caused a prediction flip, so the results do not establish that Unicode manipulation is broadly effective across phishing URLs.
+
+
+
+2.8.4 Normalisation Defence Implementation
+
+A preprocessing defence was implemented in Source_code/url_normalization.py using the function normalize_url_for_features().
+
+The defence removes the following selected invisible Unicode characters from the URL path and query:
+
+Zero-width space (U+200B)
+
+Zero-width non-joiner (U+200C)
+
+Zero-width joiner (U+200D)
+
+Zero-width no-break space / BOM (U+FEFF)
+
+This also removes the matching UTF-8 percent encoded versions (case insensitive).
+
+The defence has been integrated into the backend/main.py meaning the normalisation takes place before the lexical features are extracted and model predicted.
+
+The original URL provided by the user is returned through the API request, but is only used for the purpose of classification. The application will not access the URL.
+
+The defence does not attempt to modify the hostname or normalise all possible unicode homograph characters.
+
+
+
+2.8.5 Defended Experiment and Results
+
+The defended evaluation was implemented in backend/tests/evasion_defended_evaluation.py.
+
+The same 100 original samples and 174 generated variants were evaluated using the existing Random Forest classifier, with normalisation applied before feature extraction.
+
+You can find the result in the screenshot Evasion_04 in the folder --- secuirty evidence>section_2..8>screenshots. 
+
+The observed candidate prediction flips decreased from one to zero across the tested variants.
+
+In sample T002, it can be seen defence was successful for the original URL, raw Unicode and percent encoded variant with all three variants being classed as MALICIOUS with 80.74% probability.
+
+The corrected behaviour was confirmed through the live FastAPI /predict endpoint, demonstrating that the defence was integrated into the application rather than only into an offline experiment.
+
+The results of the defended sample can be found in security_evidence/section_2.8/defended/evasion_defended_results.csv
+
+
+2.8.6 Benign Regression and Defence Cost
+
+To investigate potential false-positive effects, backend/tests/evasion_benign_check.py evaluated 500 benign URLs sampled reproducibly from the held-out test dataset.
+
+You can find the result in the screenshot Evasion_08 in the folder --- secuirty evidence>section_2..8>screenshots. 
+
+The experiment found no additional false positives or changed predictions in these 500 benign examples.
+
+The initial run time of the original workflow was found to be approximately 0.046 seconds while the defended workflow was 0.041. This includes feature extraction and model prediction. The run time can vary.
+
+
+Therefore, the measurements do not establish that normalisation improves performance or has negligible overhead. A dedicated repeated benchmark would be needed to estimate the computational cost reliably. Normalisation also has a potential semantic cost: removing characters from a URL's path or query may change how that URL would be interpreted by a destination service. The implementation only modifies the representation supplied to the classifier.
+
+
+2.8.7 Limitations and Evaluation
+
+The experiment demonstrated that the original feature extractor could miss a suspicious keyword when an invisible Unicode character interrupted the text. Normalising selected invisible characters corrected the observed T002 misclassification.
+
+However, the defence has several limitations:
+
+Only selected invisible characters and their direct percent-encoded forms are handled.
+
+Unicode lookalike substitutions are not fully addressed.
+
+The experiments measure classifier prediction changes, not whether a modified URL points to the same real-world phishing destination.
+
+The targeted sample selection is not representative of all malicious URLs, and only one baseline prediction flip was observed.
+
+The 500-sample benign regression and single-run timing comparison do not establish performance or false-positive behaviour for all valid URLs.
+
+More comprehensive testing is required for internationalised URLs, alternative encodings and unseen manipulation techniques.
+
+The results support a targeted improvement in robustness against the tested zero-width evasion technique, rather than comprehensive protection against phishing detection evasion.
+
+
+2.8.8 Supporting Evidence
+
+All screenshots are stored under security_evidence/section_2.8/screenshots/.
+ 
+Evidence                                                 Description
+
+Evasion_01_Baseline_Attack.jpg                    Baseline attack results for 174 variants
+
+Evasion_02_Encoding_Validation.jpg          Original, raw Unicode and encoded T002 comparison
+
+Evasion_03_Fastapi_Before_Defence.jpg             FastAPI classification before normalisation
+
+Evasion_04_Defended_Attack.jpg                     Defended evaluation across 174 variants
+
+Evasion_05_Backend_Regression.jpg                  Backend regression tests
+
+Evasion_06_API_After_Defence.jpg                 FastAPI classifications after normalisation
+
+Evasion_07_DoS_Regression.jpg                        Section 2.7 concurrency regression
+
+Evasion_08_Benign_Regression.jpg                    Benign false-positive evaluation
+
+Evasion_09_Normalization_Implementation.jpg         Normalisation implementation and integration
+
+The baseline and defended CSV files contain detailed experimental measurements without including the raw selected phishing URLs.
+
+
+2.8.9 Reproducing the Experiment
+
+Run the following commands from the project root after installing the Python dependencies.
+
+The prepared Datasets/feature_dataset.csv and trained Models/phishing_classifier.joblib must already be available.
+
+# To Generate the targeted samples locally 
+python backend/tests/evasion_select_samples.py
+
+# To Evaluate the original model without the defence
+python backend/tests/evasion_attack.py
+
+# To Evaluate the same variants with normalisation
+python backend/tests/evasion_defended_evaluation.py
+
+# To Check benign classification changes
+python backend/tests/evasion_benign_check.py
+
+# To Run backend regression tests
+python -m pytest backend/tests/
+
+# To reproduce the API-level T002 verification, start FastAPI in a separate terminal and execute:
+python backend/tests/evasion_api_validate.py
+
+The repository excludes the selected sample CSV files because they contain raw potentially malicious URLs. These can be regenerated locally from the prepared dataset using evasion_select_samples.py.
+
+The current API test verifies the defended behaviour. Reproducing the historical pre-defence API results requires testing the earlier baseline implementation in a separate controlled environment.
+
 
 
  ## FastAPI Backend (Assignment 3)
